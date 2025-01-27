@@ -62,9 +62,10 @@
         table td input {
             width: 100%;
             border: none;
-            padding: 5px;
+            padding: 6px 5px; 
             font-size: 12px;
-            box-sizing: border-box;
+            line-height: 1.5; 
+            box-sizing: border-box; 
         }
 
         table td input:focus {
@@ -119,7 +120,7 @@
             </tr>
             <tr>
                 <td>Date of Complaint</td>
-                <td><input type="text" placeholder="Enter date"></td>
+                <td><input type="datetime-local" placeholder="Enter date"></td>
                 <td>Call Type</td>
                 <td><input type="text" placeholder="Enter call type"></td>
             </tr>
@@ -233,36 +234,43 @@
     <button class="download-btn" onclick="downloadPDF()">Download as PDF</button>
     <script>
         async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const pdf = new jsPDF();
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF();
 
-            const content = document.getElementById('report-content');
+    const content = document.getElementById('report-content');
 
-            // Use html2canvas to render the content as an image
-            const canvas = await html2canvas(content);
-            const imgData = canvas.toDataURL('image/png');
+    // Use html2canvas to render the content as an image
+    const canvas = await html2canvas(content, {
+        scale: 2, // Improves rendering quality
+        useCORS: true, // Ensures cross-origin images are loaded correctly
+    });
 
-            // Add the image to the PDF
-            const imgWidth = 190; // PDF width in mm
-            const pageHeight = 277; // PDF height in mm
-            const imgHeight = canvas.height * imgWidth / canvas.width;
+    // Get image data from the canvas
+    const imgData = canvas.toDataURL('image/png');
 
-            let heightLeft = imgHeight;
-            let position = 10;
+    const imgWidth = 190; // PDF width in mm
+    const pageHeight = 277; // PDF height in mm
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
+    let heightLeft = imgHeight;
+    let position = 10;
 
-            while (heightLeft > 0) {
-                position = heightLeft - imgHeight;
-                pdf.addPage();
-                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-            }
+    // Add the first image to the PDF
+    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight;
 
-            // Save the PDF
-            pdf.save('Complaint_Report.pdf');
-        }
+    // Add additional pages if needed
+    while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+    }
+
+    // Save the PDF
+    pdf.save('Complaint_Report.pdf');
+}
+
     </script>
 </body>
 </html>
