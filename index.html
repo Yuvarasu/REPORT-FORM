@@ -210,12 +210,25 @@
             </tr>
             <tr>
                 <th>Customer Remarks</th>
-                <td><input type="text" placeholder="Enter customer remarks"></td>
+                <td>
+                    <textarea 
+                        placeholder="Enter customer remarks" 
+                        oninput="autoResize(this)" 
+                        style="width: 100%; min-height: 50px; resize: none; overflow: hidden;">
+                    </textarea>
+                </td>
             </tr>
             <tr>
                 <th>Engineer Remarks</th>
-                <td><input type="text" placeholder="Enter engineer remarks"></td>
+                <td>
+                    <textarea 
+                        placeholder="Enter engineer remarks" 
+                        oninput="autoResize(this)" 
+                        style="width: 100%; min-height: 50px; resize: none; overflow: hidden;">
+                    </textarea>
+                </td>
             </tr>
+            
         </table>
 
         <div class="footer">
@@ -234,43 +247,82 @@
     <button class="download-btn" onclick="downloadPDF()">Download as PDF</button>
     <script>
         async function downloadPDF() {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF();
-
-    const content = document.getElementById('report-content');
-
-    // Use html2canvas to render the content as an image
-    const canvas = await html2canvas(content, {
-        scale: 2, // Improves rendering quality
-        useCORS: true, // Ensures cross-origin images are loaded correctly
-    });
-
-    // Get image data from the canvas
-    const imgData = canvas.toDataURL('image/png');
-
-    const imgWidth = 190; // PDF width in mm
-    const pageHeight = 277; // PDF height in mm
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-    let heightLeft = imgHeight;
-    let position = 10;
-
-    // Add the first image to the PDF
-    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-
-    // Add additional pages if needed
-    while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-    }
-
-    // Save the PDF
-    pdf.save('Complaint_Report.pdf');
-}
-
+            const { jsPDF } = window.jspdf;
+            const pdf = new jsPDF();
+    
+            const content = document.getElementById('report-content');
+    
+            // Convert textareas into static divs for PDF generation
+            const textareas = content.querySelectorAll("textarea");
+            textareas.forEach((textarea) => {
+                const span = document.createElement("span");
+                span.style.whiteSpace = "pre-wrap"; // Preserve line breaks
+                span.style.wordWrap = "break-word"; // Prevent overflowing text
+                span.style.display = "block"; // Mimic block-level textarea
+                span.style.border = textarea.style.border;
+                span.style.padding = textarea.style.padding;
+                span.style.width = textarea.style.width;
+                span.style.minHeight = textarea.style.height; // Match the height of the textarea
+                span.innerText = textarea.value; // Copy content
+    
+                // Replace textarea with span temporarily
+                textarea.parentNode.insertBefore(span, textarea);
+                textarea.style.display = "none"; // Hide textarea
+            });
+    
+            // Render the content as an image using html2canvas
+            const canvas = await html2canvas(content, {
+                scale: 2, // Higher resolution
+                useCORS: true, // Ensures cross-origin images are loaded
+            });
+    
+            // Restore textareas back after rendering
+            textareas.forEach((textarea) => {
+                const span = textarea.previousSibling; // Get the inserted span
+                span.remove(); // Remove span
+                textarea.style.display = "block"; // Show textarea
+            });
+    
+            // Get image data from canvas
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 190; // Width in mm
+            const pageHeight = 277; // Height in mm
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+    
+            let heightLeft = imgHeight;
+            let position = 10;
+    
+            // Add the image to the first page
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+    
+            // Handle multi-page PDFs
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+    
+            // Save the PDF
+            pdf.save('Complaint_Report.pdf');
+        }
     </script>
+    
+    <script>
+        // Function to auto-resize textareas as the user types
+        function autoResize(textarea) {
+            textarea.style.height = "auto"; // Reset height to calculate new height
+            textarea.style.height = textarea.scrollHeight + "px"; // Set height to match content
+        }
+    
+        // Add event listener to dynamically resize all textareas
+        document.querySelectorAll("textarea").forEach((textarea) => {
+            textarea.addEventListener("input", () => autoResize(textarea));
+        });
+    </script>
+    
+    
+    
 </body>
 </html>
